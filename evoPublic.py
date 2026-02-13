@@ -10,7 +10,9 @@ import difflib
 TOKEN = os.getenv("TOKEN")
 BOT_SAHIP_ID = 1103809448016879776  
 
-CONFIG_DOSYA = "config.json"
+# Mevcut satırı şununla değiştirebilirsin:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_DOSYA = os.path.join(BASE_DIR, "config.json")
 
 # ====================
 # CONFIG (KALICI HAFIZA)
