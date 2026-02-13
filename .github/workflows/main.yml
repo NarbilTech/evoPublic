@@ -4,9 +4,9 @@ on:
   push:
     branches: [ main ]
 
-# BU KISIM ÇOK KRİTİK: Çakışmayı engeller
+# BU KISIM ESKİ BOTU KAPATIR:
 concurrency:
-  group: discord-bot-group
+  group: discord-bot-isletimi
   cancel-in-progress: true
 
 jobs:
@@ -14,12 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.9'
+          
       - name: Install dependencies
         run: pip install discord.py
+        
       - name: Run Bot
         env:
           TOKEN: ${{ secrets.TOKEN }}
