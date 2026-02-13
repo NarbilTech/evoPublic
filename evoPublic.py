@@ -1,30 +1,25 @@
 import discord
 from discord.ext import commands
 import os
+import difflib
 
 # ====================
-# AYARLAR (ID'LER SABİTLENDİ)
+# AYARLAR (HAFIZADAN ALINDI)
 # ====================
 TOKEN = os.getenv("TOKEN")
 BOT_SAHIP_ID = 1103809448016879776 
 
-# Kaydedilen Rol ID'lerin
 UYE_ROL_ID = 1469284940863504457       
 KAYITSIZ_ROL_ID = 1469385270703947986  
 
 # ====================
-# BOT YAPILANDIRMASI
+# BOT AYARLARI
 # ====================
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
-
-# Hataları tamamen susturur (Yetkin yok mesajını engeller)
-@bot.event
-async def on_command_error(ctx, error):
-    return
 
 def yetkili_mi(ctx):
     return (ctx.author.id == BOT_SAHIP_ID or 
@@ -33,7 +28,24 @@ def yetkili_mi(ctx):
 
 @bot.event
 async def on_ready():
-    print(f"✅ {bot.user} Tüm özelliklerle aktif!")
+    print(f"✅ {bot.user} tam donanımlı olarak aktif!")
+
+# ====================
+# HATA YÖNETİMİ (ÖNERİ SİSTEMİ)
+# ====================
+@bot.event
+async def on_command_error(ctx, error):
+    # Eğer komut yanlış yazılmışsa öneride bulunur
+    if isinstance(error, commands.CommandNotFound):
+        komutlar = [cmd.name for cmd in bot.commands]
+        yazilan = ctx.message.content.replace("!", "").split()[0]
+        olasi = difflib.get_close_matches(yazilan, komutlar, n=1)
+        if olasi:
+            # Öneri mesajını atar ve 5 saniye sonra siler
+            await ctx.send(f"❓ `{yazilan}` diye bir komut yok. **!{olasi[0]}** mı demek istedin?", delete_after=5)
+    
+    # Yetki hatalarında veya diğer teknik hatalarda bot tamamen susar
+    return
 
 # ====================
 # MAVİ YÖNETİCİ PANELİ
@@ -44,7 +56,7 @@ async def admin(ctx):
     embed = discord.Embed(
         title="🛠️ Yönetici Paneli",
         description="Aşağıdaki komutlar sadece yetkililer içindir:",
-        color=0x3498db # Mavi Panel
+        color=0x3498db # Saf Mavi
     )
     embed.add_field(name="👤 Kayıt", value="`!kayit @üye` / `!unkayit @üye`", inline=False)
     embed.add_field(name="🎭 Roller", value="`!rolver @üye @rol` / `!rolal @üye @rol`", inline=False)
@@ -52,7 +64,7 @@ async def admin(ctx):
     await ctx.send(embed=embed)
 
 # ====================
-# TÜM KOMUTLAR (EKSİKSİZ)
+# MODERASYON KOMUTLARI (EKSİKSİZ)
 # ====================
 
 @bot.command()
@@ -89,7 +101,7 @@ async def rolver(ctx, member: discord.Member, rol: discord.Role):
     if not yetkili_mi(ctx): return
     try:
         await member.add_roles(rol)
-        await ctx.send(f"✅ **{rol.name}** verildi.", delete_after=5)
+        await ctx.send(f"✅ **{rol.name}** rolü verildi.", delete_after=5)
     except: pass
 
 @bot.command()
@@ -97,7 +109,7 @@ async def rolal(ctx, member: discord.Member, rol: discord.Role):
     if not yetkili_mi(ctx): return
     try:
         await member.remove_roles(rol)
-        await ctx.send(f"✅ **{rol.name}** alındı.", delete_after=5)
+        await ctx.send(f"✅ **{rol.name}** rolü geri alındı.", delete_after=5)
     except: pass
 
 @bot.command()
@@ -113,7 +125,7 @@ async def kick(ctx, member: discord.Member, *, sebep="Belirtilmedi"):
     if not yetkili_mi(ctx): return
     try:
         await member.kick(reason=sebep)
-        await ctx.send(f"👢 {member.name} atıldı.")
+        await ctx.send(f"👢 {member.name} sunucudan atıldı.")
     except: pass
 
 @bot.command()
@@ -122,7 +134,7 @@ async def unban(ctx, user_id: int):
     try:
         user = await bot.fetch_user(user_id)
         await ctx.guild.unban(user)
-        await ctx.send(f"✅ {user.name} yasak kaldırıldı.")
+        await ctx.send(f"✅ {user.name} yasağı kaldırıldı.")
     except: pass
 
 bot.run(TOKEN)
