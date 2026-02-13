@@ -1,28 +1,29 @@
-name: Discord Bot 7/24
+name: Discord Bot
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   schedule:
-    - cron: '0 */4 * * *' # Her 4 saatte bir tetikler
+    - cron: '0 */4 * * *'
+
+# BURASI ÇOK ÖNEMLİ: Aynı anda sadece bir botun çalışmasını sağlar
+concurrency:
+  group: discord-bot
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v2
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v2
         with:
           python-version: '3.9'
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install discord.py
-
       - name: Run Bot
         env:
           TOKEN: ${{ secrets.TOKEN }}
