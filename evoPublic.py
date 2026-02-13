@@ -1,16 +1,15 @@
 import discord
 from discord.ext import commands
 import os
-import difflib
 
 # ====================
-# AYARLAR (ID'LER SABİTLENDİ)
+# AYARLAR (HAFIZADAN ALINDI)
 # ====================
 TOKEN = os.getenv("TOKEN")
 BOT_SAHIP_ID = 1103809448016879776 
 
-UYE_ROL_ID = 1469284940863504457       # Üye rolü (Senin verdiğin)
-KAYITSIZ_ROL_ID = 1469385270703947986  # Kayıtsız rolü (Senin verdiğin)
+UYE_ROL_ID = 1469284940863504457       # Kaydedilen Üye ID
+KAYITSIZ_ROL_ID = 1469385270703947986  # Kaydedilen Kayıtsız ID
 
 # ====================
 # BOT YAPILANDIRMASI
@@ -26,44 +25,48 @@ def yetkili_mi(ctx):
             ctx.author.id == ctx.guild.owner_id or 
             ctx.author.guild_permissions.administrator)
 
-@bot.event
-async def on_ready():
-    print(f"✅ {bot.user} Aktif! Roller: Üye({UYE_ROL_ID}), Kayıtsız({KAYITSIZ_ROL_ID})")
-
 # ====================
-# HATA YÖNETİMİ (SADECE ÖNERİ)
+# HATALARI TAMAMEN SUSTUR
 # ====================
 @bot.event
 async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound):
-        komutlar = [cmd.name for cmd in bot.commands]
-        yazilan = ctx.message.content.replace("!", "").split()[0]
-        olasi = difflib.get_close_matches(yazilan, komutlar, n=1)
-        if olasi:
-            await ctx.send(f"❓ **!{olasi[0]}** mı demek istedin?", delete_after=5)
+    # Bu fonksiyonun içi tamamen boş bırakıldı.
+    # Böylece yanlış komut yazılsa da, yetki olmasa da bot ASLA cevap vermez.
     return
 
-# ====================
-# KOMUTLAR (EKSİKSİZ)
-# ====================
+@bot.event
+async def on_ready():
+    print(f"✅ {bot.user} Tertemiz Modda Başlatıldı!")
 
+# ====================
+# MAVİ BAŞLIKLI YÖNETİCİ PANELİ
+# ====================
 @bot.command()
 async def admin(ctx):
     if not yetkili_mi(ctx): return
-    embed = discord.Embed(title="🛡️ EvoPublic Yetkili Paneli", color=discord.Color.gold())
-    embed.add_field(name="📋 Kayıt", value="`!kayit @üye`, `!unkayit @üye`", inline=True)
-    embed.add_field(name="🎭 Roller", value="`!rolver @üye @rol`, `!rolal @üye @rol`", inline=True)
-    embed.add_field(name="🔨 Moderasyon", value="`!ban @üye`, `!kick @üye`, `!unban ID`", inline=False)
-    embed.add_field(name="🧹 Temizlik", value="`!sil [sayı]`", inline=True)
+    
+    # İstediğin o mavi başlıklı şık panel
+    embed = discord.Embed(
+        title="🛠️ Yönetici Paneli",
+        description="Aşağıdaki komutlar sadece yetkililer içindir:",
+        color=0x3498db  # Mavi Renk
+    )
+    embed.add_field(name="Kayıt İşlemleri", value="`!kayit @üye` / `!unkayit @üye`", inline=False)
+    embed.add_field(name="Rol İşlemleri", value="`!rolver @üye @rol` / `!rolal @üye @rol`", inline=False)
+    embed.add_field(name="Moderasyon", value="`!ban` / `!kick` / `!unban ID` / `!sil [sayı]`", inline=False)
+    
     await ctx.send(embed=embed)
+
+# ====================
+# KOMUTLAR (SESSİZ ÇALIŞMA)
+# ====================
 
 @bot.command()
 async def sil(ctx, miktar: int):
     if not yetkili_mi(ctx): return
     try:
         await ctx.channel.purge(limit=miktar + 1)
-        msg = await ctx.send(f"🧹 {miktar} mesaj temizlendi.")
-        await msg.delete(delay=3)
+        msg = await ctx.send(f"🧹 {miktar} mesaj temizlendi.", delete_after=3)
     except: pass
 
 @bot.command()
@@ -103,15 +106,15 @@ async def rolal(ctx, member: discord.Member, rol: discord.Role):
     except: pass
 
 @bot.command()
-async def ban(ctx, member: discord.Member, *, sebep="Belirtilmedi"):
+async def ban(ctx, member: discord.Member):
     if not yetkili_mi(ctx): return
-    try: await member.ban(reason=sebep); await ctx.send(f"🔨 {member.name} banlandı.")
+    try: await member.ban()
     except: pass
 
 @bot.command()
-async def kick(ctx, member: discord.Member, *, sebep="Belirtilmedi"):
+async def kick(ctx, member: discord.Member):
     if not yetkili_mi(ctx): return
-    try: await member.kick(reason=sebep); await ctx.send(f"👢 {member.name} atıldı.")
+    try: await member.kick()
     except: pass
 
 @bot.command()
@@ -120,7 +123,6 @@ async def unban(ctx, user_id: int):
     try:
         user = await bot.fetch_user(user_id)
         await ctx.guild.unban(user)
-        await ctx.send(f"✅ {user.name} yasağı kaldırıldı.")
     except: pass
 
 bot.run(TOKEN)
