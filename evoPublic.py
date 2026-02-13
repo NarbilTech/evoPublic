@@ -1,34 +1,17 @@
 import discord
 from discord.ext import commands
-import json
 import os
 import difflib
 
 # ====================
-# AYARLAR
+# AYARLAR (BURALARI DOLDUR)
 # ====================
 TOKEN = os.getenv("TOKEN")
-BOT_SAHIP_ID = 1103809448016879776  
+BOT_SAHIP_ID = 1103809448016879776  # Senin ID'n
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_DOSYA = os.path.join(BASE_DIR, "config.json")
-
-# ====================
-# CONFIG (KALICI HAFIZA)
-# ====================
-if os.path.exists(CONFIG_DOSYA):
-    with open(CONFIG_DOSYA, "r", encoding="utf-8") as f:
-        CONFIG = json.load(f)
-else:
-    CONFIG = {"ROLLER": {}}
-    with open(CONFIG_DOSYA, "w", encoding="utf-8") as f:
-        json.dump(CONFIG, f, indent=4)
-
-def config_kaydet():
-    with open(CONFIG_DOSYA, "w", encoding="utf-8") as f:
-        json.dump(CONFIG, f, indent=4)
-
-CONFIG["ROLLER"] = {int(k): v for k, v in CONFIG.get("ROLLER", {}).items()}
+# KAYIT SİSTEMİ İÇİN SABİT ROL ID'LERİ
+UYE_ROL_ID = 123456789012345678       # Üye rolü ID'sini buraya yapıştır
+KAYITSIZ_ROL_ID = 123456789012345678  # Kayıtsız rolü ID'sini buraya yapıştır
 
 # ====================
 # BOT AYARLARI
@@ -40,11 +23,13 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # ====================
-# YARDIMCI FONKSİYONLAR
+# YETKİ KONTROLÜ
 # ====================
 def yetkili_mi(ctx):
-    # Komutu kullanan kişi sunucu sahibi, bot sahibi veya Yönetici yetkisine sahipse True döner
-    return ctx.author.guild_permissions.administrator or ctx.author.id == BOT_SAHIP_ID or ctx.author.id == ctx.guild.owner_id
+    # Bot sahibi, Sunucu sahibi veya Yönetici yetkisi olanlar kullanabilir
+    return (ctx.author.id == BOT_SAHIP_ID or 
+            ctx.author.id == ctx.guild.owner_id or 
+            ctx.author.guild_permissions.administrator)
 
 # ====================
 # EVENTS
@@ -61,44 +46,85 @@ async def on_command_error(ctx, error):
         olasi = difflib.get_close_matches(yazilan, komutlar, n=1)
         if olasi:
             await ctx.send(f"❌ `{yazilan}` diye bir komut yok. `{olasi[0]}` mı demek istedin?")
-        else:
-            await ctx.send("❌ Komut bulunamadı.")
 
 # ====================
-# ROL İŞLEMLERİ
+# KAYIT SİSTEMİ (OTOMATİK ID)
+# ====================
+
+@bot.command()
+async def kayit(ctx, member: discord.Member):
+    if not yetkili_mi(ctx): return
+    uye_rol = ctx.guild.get_role(UYE_ROL_ID)
+    kayitsiz_rol = ctx.guild.get_role(KAYITSIZ_ROL_ID)
+    try:
+        if kayitsiz_rol: await member.remove_roles(kayitsiz_rol)
+        if uye_rol: await member.add_roles(uye_rol)
+        await ctx.send(f"✅ {member.mention} başarıyla kayıt edildi.")
+    except:
+        await ctx.send("❌ Yetki hatası! Botun rolü en üstte olmalı.")
+
+@bot.command()
+async def unkayit(ctx, member: discord.Member):
+    if not yetkili_mi(ctx): return
+    uye_rol = ctx.guild.get_role(UYE_ROL_ID)
+    kayitsiz_rol = ctx.guild.get_role(KAYITSIZ_ROL_ID)
+    try:
+        if uye_rol: await member.remove_roles(uye_rol)
+        if kayitsiz_rol: await member.add_roles(kayitsiz_rol)
+        await ctx.send(f"🔄 {member.mention} kayıtsıza atıldı.")
+    except:
+        await ctx.send("❌ Yetki hatası!")
+
+# ====================
+# ROL YÖNETİMİ (ETİKETLEME)
 # ====================
 
 @bot.command()
 async def rolver(ctx, member: discord.Member, rol: discord.Role):
-    """Örn: !rolver @Kullanıcı @Rol"""
-    if not yetkili_mi(ctx):
-        await ctx.send("❌ Bu komutu kullanmak için **Yönetici** yetkisine sahip olmalısın.")
-        return
-
+    if not yetkili_mi(ctx): return
     try:
         await member.add_roles(rol)
         await ctx.send(f"✅ {member.mention} kullanıcısına **{rol.name}** rolü verildi.")
-    except discord.Forbidden:
-        await ctx.send("❌ Bu rolü vermeye yetkim yetmiyor. Bot rolünü yukarı taşımayı deneyin.")
-    except Exception as e:
-        await ctx.send(f"❌ Bir hata oluştu: {e}")
+    except:
+        await ctx.send("❌ Bu rolü vermeye yetkim yetmiyor.")
 
 @bot.command()
 async def rolal(ctx, member: discord.Member, rol: discord.Role):
-    """Örn: !rolal @Kullanıcı @Rol"""
-    if not yetkili_mi(ctx):
-        await ctx.send("❌ Bu komutu kullanmak için **Yönetici** yetkisine sahip olmalısın.")
-        return
-
+    if not yetkili_mi(ctx): return
     try:
         await member.remove_roles(rol)
         await ctx.send(f"✅ {member.mention} üzerinden **{rol.name}** rolü alındı.")
-    except discord.Forbidden:
-        await ctx.send("❌ Bu rolü almaya yetkim yetmiyor. Bot rolünü yukarı taşımayı deneyin.")
-    except Exception as e:
-        await ctx.send(f"❌ Bir hata oluştu: {e}")
+    except:
+        await ctx.send("❌ Bu rolü almaya yetkim yetmiyor.")
 
 # ====================
-# BAŞLAT
+# MODERASYON (BAN, KICK, UNBAN, SIL)
 # ====================
+
+@bot.command()
+async def ban(ctx, member: discord.Member, *, sebep="Belirtilmedi"):
+    if not yetkili_mi(ctx): return
+    await member.ban(reason=sebep)
+    await ctx.send(f"🔨 **{member.name}** banlandı. Sebep: {sebep}")
+
+@bot.command()
+async def unban(ctx, user_id: int):
+    if not yetkili_mi(ctx): return
+    user = await bot.fetch_user(user_id)
+    await ctx.guild.unban(user)
+    await ctx.send(f"✅ **{user.name}** yasağı kaldırıldı.")
+
+@bot.command()
+async def kick(ctx, member: discord.Member, *, sebep="Belirtilmedi"):
+    if not yetkili_mi(ctx): return
+    await member.kick(reason=sebep)
+    await ctx.send(f"👢 **{member.name}** atıldı. Sebep: {sebep}")
+
+@bot.command()
+async def sil(ctx, miktar: int):
+    if not yetkili_mi(ctx): return
+    await ctx.channel.purge(limit=miktar + 1)
+    msg = await ctx.send(f"🧹 {miktar} mesaj temizlendi.")
+    await msg.delete(delay=3)
+
 bot.run(TOKEN)
