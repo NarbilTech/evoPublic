@@ -28,43 +28,47 @@ def yetkili_mi(ctx):
 
 @bot.event
 async def on_ready():
-    print(f"✅ {bot.user} tam donanımlı olarak aktif!")
+    print(f"🚀 {bot.user} Sistemi Kırmızı Alarm Modunda Aktif!")
 
 # ====================
 # HATA YÖNETİMİ (ÖNERİ SİSTEMİ)
 # ====================
 @bot.event
 async def on_command_error(ctx, error):
-    # Eğer komut yanlış yazılmışsa öneride bulunur
     if isinstance(error, commands.CommandNotFound):
         komutlar = [cmd.name for cmd in bot.commands]
         yazilan = ctx.message.content.replace("!", "").split()[0]
         olasi = difflib.get_close_matches(yazilan, komutlar, n=1)
         if olasi:
-            # Öneri mesajını atar ve 5 saniye sonra siler
-            await ctx.send(f"❓ `{yazilan}` diye bir komut yok. **!{olasi[0]}** mı demek istedin?", delete_after=5)
-    
-    # Yetki hatalarında veya diğer teknik hatalarda bot tamamen susar
+            await ctx.send(f"❓ `{yazilan}` bulunamadı. **!{olasi[0]}** mı demek istedin?", delete_after=5)
     return
 
 # ====================
-# MAVİ YÖNETİCİ PANELİ
+# MODERN KIRMIZI YÖNETİCİ PANELİ
 # ====================
 @bot.command()
 async def admin(ctx):
     if not yetkili_mi(ctx): return
+    
     embed = discord.Embed(
-        title="🛠️ Yönetici Paneli",
-        description="Aşağıdaki komutlar sadece yetkililer içindir:",
-        color=0x3498db # Saf Mavi
+        title="🛑 EVO YÖNETİM MERKEZİ",
+        description="Sunucu güvenliği ve düzeni için aşağıdaki yetkili araçlarını kullanın.",
+        color=0xFF0000  # Parlak Kırmızı
     )
-    embed.add_field(name="👤 Kayıt", value="`!kayit @üye` / `!unkayit @üye`", inline=False)
-    embed.add_field(name="🎭 Roller", value="`!rolver @üye @rol` / `!rolal @üye @rol`", inline=False)
-    embed.add_field(name="🛡️ Moderasyon", value="`!ban @üye` / `!kick @üye` / `!unban ID` / `!sil [sayı]`", inline=False)
+    
+    # Modern ikonlar ve düzenli saha yapıları
+    embed.add_field(name="👥 KAYIT YÖNETİMİ", value="> `!kayit @üye`\n> `!unkayit @üye`", inline=True)
+    embed.add_field(name="🎭 ROL SİSTEMİ", value="> `!rolver @üye @rol`\n> `!rolal @üye @rol`", inline=True)
+    embed.add_field(name="🛡️ MODERASYON", value="```!ban @üye\n!kick @üye\n!unban [ID]```", inline=False)
+    embed.add_field(name="🧹 KANAL TEMİZLİĞİ", value="`!sil [miktar]`", inline=True)
+    
+    embed.set_footer(text=f"Yetkili: {ctx.author.name} | 2026 Evo System", icon_url=ctx.author.display_avatar.url)
+    embed.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+    
     await ctx.send(embed=embed)
 
 # ====================
-# MODERASYON KOMUTLARI (EKSİKSİZ)
+# KOMUTLAR (EKSİKSİZ)
 # ====================
 
 @bot.command()
@@ -72,7 +76,7 @@ async def sil(ctx, miktar: int):
     if not yetkili_mi(ctx): return
     try:
         await ctx.channel.purge(limit=miktar + 1)
-        msg = await ctx.send(f"🧹 {miktar} mesaj temizlendi.")
+        msg = await ctx.send(f"🧹 **{miktar}** mesaj imha edildi.")
         await msg.delete(delay=3)
     except: pass
 
@@ -83,7 +87,7 @@ async def kayit(ctx, member: discord.Member):
         u, k = ctx.guild.get_role(UYE_ROL_ID), ctx.guild.get_role(KAYITSIZ_ROL_ID)
         if k: await member.remove_roles(k)
         if u: await member.add_roles(u)
-        await ctx.send(f"✅ {member.display_name} kaydedildi.", delete_after=5)
+        await ctx.send(f"✅ {member.mention} başarıyla kayıt edildi.", delete_after=5)
     except: pass
 
 @bot.command()
@@ -93,7 +97,7 @@ async def unkayit(ctx, member: discord.Member):
         u, k = ctx.guild.get_role(UYE_ROL_ID), ctx.guild.get_role(KAYITSIZ_ROL_ID)
         if u: await member.remove_roles(u)
         if k: await member.add_roles(k)
-        await ctx.send(f"🔄 {member.display_name} unkayit edildi.", delete_after=5)
+        await ctx.send(f"🔄 {member.mention} kayıtsıza çekildi.", delete_after=5)
     except: pass
 
 @bot.command()
@@ -101,7 +105,7 @@ async def rolver(ctx, member: discord.Member, rol: discord.Role):
     if not yetkili_mi(ctx): return
     try:
         await member.add_roles(rol)
-        await ctx.send(f"✅ **{rol.name}** rolü verildi.", delete_after=5)
+        await ctx.send(f"✅ **{rol.name}** rolü tanımlandı.", delete_after=5)
     except: pass
 
 @bot.command()
@@ -117,7 +121,7 @@ async def ban(ctx, member: discord.Member, *, sebep="Belirtilmedi"):
     if not yetkili_mi(ctx): return
     try:
         await member.ban(reason=sebep)
-        await ctx.send(f"🔨 {member.name} banlandı.")
+        await ctx.send(f"🔨 {member.name} sunucudan yasaklandı.")
     except: pass
 
 @bot.command()
@@ -134,7 +138,7 @@ async def unban(ctx, user_id: int):
     try:
         user = await bot.fetch_user(user_id)
         await ctx.guild.unban(user)
-        await ctx.send(f"✅ {user.name} yasağı kaldırıldı.")
+        await ctx.send(f"✅ {user.name} kullanıcısının yasağı kaldırıldı.")
     except: pass
 
 bot.run(TOKEN)
