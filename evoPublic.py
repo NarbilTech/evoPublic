@@ -62,7 +62,7 @@ async def admin(ctx):
     embed.add_field(name="🛡️ MODERASYON", value="```!ban @üye\n!kick @üye\n!unban [ID]```", inline=False)
     embed.add_field(name="🧹 KANAL TEMİZLİĞİ", value="`!sil [miktar]`", inline=True)
     
-    embed.set_footer(text=f"Yetkili: {ctx.author.name} | 2026 Evo System", icon_url=ctx.author.display_avatar.url)
+    embed.set_footer(text=f"{ctx.author.name} | 2026 Evo System", icon_url=ctx.author.display_avatar.url)
     embed.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
     
     await ctx.send(embed=embed)
