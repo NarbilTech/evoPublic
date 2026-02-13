@@ -5,7 +5,7 @@ import difflib
 from typing import Union
 
 # ====================
-# AYARLAR (HAFIZADAN ALINDI)
+# AYARLAR (ID'LER SABİTLENDİ)
 # ====================
 TOKEN = os.getenv("TOKEN")
 BOT_SAHIP_ID = 1103809448016879776 
@@ -28,10 +28,11 @@ def yetkili_mi(ctx):
             ctx.author.guild_permissions.administrator)
 
 # ====================
-# OTOMATİK ROL
+# OTOMATİK ROL VERME
 # ====================
 @bot.event
 async def on_member_join(member):
+    """Yeni girenlere otomatik kayıtsız rolü verir."""
     try:
         rol = member.guild.get_role(KAYITSIZ_ROL_ID)
         if rol: await member.add_roles(rol)
@@ -39,10 +40,10 @@ async def on_member_join(member):
 
 @bot.event
 async def on_ready():
-    print(f"🚀 {bot.user} ID ve Etiket destekli modda aktif!")
+    print(f"🚀 {bot.user} Aktif!")
 
 # ====================
-# HATA YÖNETİMİ
+# HATA YÖNETİMİ (ÖNERİ SİSTEMİ)
 # ====================
 @bot.event
 async def on_command_error(ctx, error):
@@ -55,21 +56,30 @@ async def on_command_error(ctx, error):
     return
 
 # ====================
-# MODERN KIRMIZI YÖNETİCİ PANELİ
+# KIRMIZI YÖNETİCİ PANELİ (BOZULMADI)
 # ====================
 @bot.command()
 async def admin(ctx):
     if not yetkili_mi(ctx): return
-    embed = discord.Embed(title="🛑 ÇAKIRBEYLİ YÖNETİM", color=0xFF0000)
-    embed.add_field(name="👥 KAYIT (Etiket/ID)", value="`!kayit @üye/ID`\n`!unkayit @üye/ID`", inline=True)
-    embed.add_field(name="🎭 ROLLER", value="`!rolver @üye/ID @rol`\n`!rolal @üye/ID @rol`", inline=True)
-    embed.add_field(name="🛡️ MODERASYON", value="```!ban @üye/ID\n!kick @üye/ID\n!unban ID```", inline=False)
-    embed.add_field(name="🧹 TEMİZLİK", value="`!sil [miktar]`", inline=True)
-    embed.set_footer(text=f"{ctx.author.name} | 2026 Evo System")
+    
+    embed = discord.Embed(
+        title="🛑 ÇAKIRBEYLİ",
+        description="Sunucu güvenliği ve düzeni için aşağıdaki yetkili araçlarını kullanın.",
+        color=0xFF0000 
+    )
+    
+    embed.add_field(name="👥 KAYIT YÖNETİMİ", value="> `!kayit @üye/ID`\n> `!unkayit @üye/ID`", inline=True)
+    embed.add_field(name="🎭 ROL SİSTEMİ", value="> `!rolver @üye/ID @rol`\n> `!rolal @üye/ID @rol`", inline=True)
+    embed.add_field(name="🛡️ MODERASYON", value="```!ban @üye/ID\n!kick @üye/ID\n!unban [ID]```", inline=False)
+    embed.add_field(name="🧹 KANAL TEMİZLİĞİ", value="`!sil [miktar]`", inline=True)
+    
+    embed.set_footer(text=f"{ctx.author.name} | 2026 Evo System", icon_url=ctx.author.display_avatar.url)
+    embed.set_thumbnail(url=ctx.guild.icon.url if ctx.guild.icon else None)
+    
     await ctx.send(embed=embed)
 
 # ====================
-# KOMUTLAR (ID VE ETİKET DESTEKLİ)
+# KOMUTLAR (ID + ETİKET DESTEKLİ)
 # ====================
 
 @bot.command()
@@ -77,8 +87,7 @@ async def kayit(ctx, user: Union[discord.Member, discord.User]):
     if not yetkili_mi(ctx): return
     try:
         member = ctx.guild.get_member(user.id)
-        if not member: return await ctx.send("❌ Kullanıcı sunucuda bulunamadı.")
-        
+        if not member: return await ctx.send("❌ Kullanıcı bulunamadı.")
         u, k = ctx.guild.get_role(UYE_ROL_ID), ctx.guild.get_role(KAYITSIZ_ROL_ID)
         if k: await member.remove_roles(k)
         if u: await member.add_roles(u)
@@ -98,12 +107,21 @@ async def unkayit(ctx, user: Union[discord.Member, discord.User]):
     except: pass
 
 @bot.command()
+async def sil(ctx, miktar: int):
+    if not yetkili_mi(ctx): return
+    try:
+        await ctx.channel.purge(limit=miktar + 1)
+        msg = await ctx.send(f"🧹 **{miktar}** mesaj imha edildi.")
+        await msg.delete(delay=3)
+    except: pass
+
+@bot.command()
 async def rolver(ctx, user: Union[discord.Member, discord.User], rol: discord.Role):
     if not yetkili_mi(ctx): return
     try:
         member = ctx.guild.get_member(user.id)
         await member.add_roles(rol)
-        await ctx.send(f"✅ {rol.name} rolü verildi.", delete_after=5)
+        await ctx.send(f"✅ **{rol.name}** rolü tanımlandı.", delete_after=5)
     except: pass
 
 @bot.command()
@@ -112,7 +130,7 @@ async def rolal(ctx, user: Union[discord.Member, discord.User], rol: discord.Rol
     try:
         member = ctx.guild.get_member(user.id)
         await member.remove_roles(rol)
-        await ctx.send(f"✅ {rol.name} rolü geri alındı.", delete_after=5)
+        await ctx.send(f"✅ **{rol.name}** rolü geri alındı.", delete_after=5)
     except: pass
 
 @bot.command()
@@ -120,7 +138,7 @@ async def ban(ctx, user: Union[discord.Member, discord.User], *, sebep="Belirtil
     if not yetkili_mi(ctx): return
     try:
         await ctx.guild.ban(user, reason=sebep)
-        await ctx.send(f"🔨 {user.name} yasaklandı.")
+        await ctx.send(f"🔨 {user.name} sunucudan yasaklandı.")
     except: pass
 
 @bot.command()
@@ -128,15 +146,7 @@ async def kick(ctx, user: Union[discord.Member, discord.User], *, sebep="Belirti
     if not yetkili_mi(ctx): return
     try:
         await ctx.guild.kick(user, reason=sebep)
-        await ctx.send(f"👢 {user.name} atıldı.")
-    except: pass
-
-@bot.command()
-async def sil(ctx, miktar: int):
-    if not yetkili_mi(ctx): return
-    try:
-        await ctx.channel.purge(limit=miktar + 1)
-        msg = await ctx.send(f"🧹 **{miktar}** mesaj temizlendi.", delete_after=3)
+        await ctx.send(f"👢 {user.name} sunucudan atıldı.")
     except: pass
 
 @bot.command()
@@ -145,7 +155,7 @@ async def unban(ctx, user_id: int):
     try:
         user = await bot.fetch_user(user_id)
         await ctx.guild.unban(user)
-        await ctx.send(f"✅ {user.name} yasağı kaldırıldı.")
+        await ctx.send(f"✅ {user.name} kullanıcısının yasağı kaldırıldı.")
     except: pass
 
 bot.run(TOKEN)
