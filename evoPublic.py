@@ -51,7 +51,7 @@ async def admin(ctx):
     if not yetkili_mi(ctx): return
     
     embed = discord.Embed(
-        title="🛑 EVO YÖNETİM MERKEZİ",
+        title="🛑 ÇAKIRBEYLİ",
         description="Sunucu güvenliği ve düzeni için aşağıdaki yetkili araçlarını kullanın.",
         color=0xFF0000  # Parlak Kırmızı
     )
