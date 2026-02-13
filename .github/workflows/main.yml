@@ -21,4 +21,4 @@ jobs:
       - name: Run Bot
         env:
           TOKEN: ${{ secrets.BOT_TOKEN }} # Token'ı buraya direkt yazma!
-        run: python bot.py
+        run: python evoPublic.py
