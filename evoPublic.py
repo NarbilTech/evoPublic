@@ -9,8 +9,8 @@ import difflib
 TOKEN = os.getenv("TOKEN")
 BOT_SAHIP_ID = 1103809448016879776 
 
-UYE_ROL_ID = 123456789012345678       # Buraya Üye rol ID'sini gir
-KAYITSIZ_ROL_ID = 123456789012345678  # Buraya Kayıtsız rol ID'sini gir
+UYE_ROL_ID = 1469284940863504457       # Buraya Üye rol ID'sini gir
+KAYITSIZ_ROL_ID = 1469385270703947986  # Buraya Kayıtsız rol ID'sini gir
 
 # ====================
 # BOT AYARLARI
