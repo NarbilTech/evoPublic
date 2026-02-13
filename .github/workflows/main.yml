@@ -3,12 +3,10 @@ name: Discord Bot
 on:
   push:
     branches: [ main ]
-  schedule:
-    - cron: '0 */4 * * *'
 
-# BURASI ÇOK ÖNEMLİ: Aynı anda sadece bir botun çalışmasını sağlar
+# BU KISIM ÇOK KRİTİK: Çakışmayı engeller
 concurrency:
-  group: discord-bot
+  group: discord-bot-group
   cancel-in-progress: true
 
 jobs:
@@ -21,9 +19,7 @@ jobs:
         with:
           python-version: '3.9'
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install discord.py
+        run: pip install discord.py
       - name: Run Bot
         env:
           TOKEN: ${{ secrets.TOKEN }}
