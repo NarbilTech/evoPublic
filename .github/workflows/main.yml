@@ -3,8 +3,10 @@ name: Discord Bot
 on:
   push:
     branches: [ main ]
+  schedule:
+    - cron: '0 */4 * * *'  # Botu her 4 saatte bir kontrol eder ve kapalıysa açar
+  workflow_dispatch:      # İstediğinde GitHub üzerinden manuel başlatma butonu açar
 
-# BU KISIM HAYALET BOTLARI ÖLDÜRÜR:
 concurrency:
   group: discord-bot-isletimi
   cancel-in-progress: true
